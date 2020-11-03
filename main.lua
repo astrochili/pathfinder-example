@@ -2,12 +2,13 @@ local generator = require('generator')
 local pathfinder = require('pathfinder')
 local display = require('display')
 
-local mapSize = { width = 16, height = 16 }
+local mapSize = { width = 8, height = 8 }
 local mapDense = 0.3
 
 local map = generator.randomMap(mapSize, mapDense)
-local startPoint = generator.randomFreePoint(map.grid)
-local endPoint = generator.randomFreePoint(map.grid)
-local path = pathfinder.find(map.grid, startPoint, endPoint)
+local start = generator.randomFreePoint(map.grid)
+local target = generator.randomFreePoint(map.grid, { start })
+local path = pathfinder.find(map.grid, start, target)
 
-display.display(map, startPoint, endPoint, path)
+display.displayMap(map, start, target, path)
+display.displayLog(path)

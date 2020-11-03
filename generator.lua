@@ -47,20 +47,31 @@ end
 
 --- Find a random free point on the map grid
 -- @param grid table: a map grid
+-- @param excluded table: an array of excluded points
 -- @return table: a random free point like { x = 3, y = 5 }
-function generator.randomFreePoint(grid)
+function generator.randomFreePoint(grid, excludedPoints)
+  local excludedPoints = excludedPoints or { }
   local freePoints = { }
 
   -- Find free points
   for x, row in ipairs(grid) do
     for y, isWall in ipairs(row) do
-      if not isWall then
+
+      local isExcluded = false
+      for _, excludedPoint in ipairs(excludedPoints) do
+        if x == excludedPoint.x and y == excludedPoint.y then
+          isExcluded = true
+        end
+      end
+
+      if not isWall and not isExcluded then
         local point = {
           ['x'] = x,
           ['y'] = y
         }
         table.insert(freePoints, point)
       end
+      
     end
   end
 

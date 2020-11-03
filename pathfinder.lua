@@ -7,14 +7,108 @@ pathfinder.strategies = {
 }
 
 --- Find a path by the A-star algoritm
---- Thanks to the article: https://habr.com/ru/post/444828/
+--- Thanks to the article: https://www.gabrielgambetta.com/generic-search.html
 -- @param grid table: a map with [x][y] coordinates and 0 (empty) or 1 (solid) values
--- @param startPoint table: a start point { x, y }
--- @param endPoint table: a target point { x, y }
+-- @param start table: a start point { x, y }
+-- @param target table: a target point { x, y }
 -- @return table: an array with path coordinates
-local function astar(grid, startPoint, endPoint)
-  -- TODO: Make A-star algoritm
-  return mock
+local function astar(grid, start, target)
+  local startPoint = { x = start.x, y = start.y }
+  local targetPoint = { x = target.x, y = target.y }
+  local reachablePoints = { startPoint }
+  local exploredPoints = { }
+
+  -- Path builder
+  local function reverseTailChain(headPoint)
+    local path = { }
+    local point = headPoint
+
+    while point.tailPoint do
+      table.insert(path, point)
+      point = point.tailPoint
+    end
+
+    return path
+  end
+
+  -- Pending point chooser
+  local function choosePendingPoint(reachablePoints)
+    local index = math.random(1, #reachablePoints)
+    return reachablePoints[index]
+  end
+
+  -- Nearby points finder
+  local function findNearbyPoints(point, grid)
+    local nearbyPoints = { }
+
+    local leftPoint = { x = point.x - 1, y = point.y }
+    if leftPoint.x > 0 and grid[leftPoint.x][leftPoint.y] == false then
+      table.insert(nearbyPoints, leftPoint)
+    end
+
+    local rightPoint = { x = point.x + 1, y = point.y }
+    if rightPoint.x <= #grid and grid[rightPoint.x][rightPoint.y] == false then
+      table.insert(nearbyPoints, rightPoint)
+    end
+
+    local topPoint = { x = point.x , y = point.y - 1 }
+    if topPoint.y > 0 and grid[topPoint.x][topPoint.y] == false then
+      table.insert(nearbyPoints, topPoint)
+    end
+
+    local bottomPoint = { x = point.x, y = point.y + 1}
+    if bottomPoint.y <= #grid[bottomPoint.x] and grid[bottomPoint.x][bottomPoint.y] == false then
+      table.insert(nearbyPoints, bottomPoint)
+    end
+
+    return nearbyPoints
+  end
+
+  while #reachablePoints > 0 do
+    local pendingPoint = choosePendingPoint(reachablePoints)
+
+    -- Check the end of search
+    if pendingPoint.x == targetPoint.x and pendingPoint.y == targetPoint.y then
+      local path = reverseTailChain(pendingPoint)
+      return path
+    end
+
+    -- Remove the point from reachable points and add to explored points
+    for index = 1, #reachablePoints do
+      if reachablePoints[index] == pendingPoint then
+        table.remove(reachablePoints, index)
+        break
+      end
+    end
+    table.insert(exploredPoints, pendingPoint)
+
+    -- Find nearby points and remove unwanted points from them
+    local nearbyPoints = findNearbyPoints(pendingPoint, grid)
+    for index = #nearbyPoints, 1, -1 do
+      local nearbyPoint = nearbyPoints[index]
+
+      -- Remove the point if it's explored
+      for _, exploredPoint in ipairs(exploredPoints) do
+        if nearbyPoint.x == exploredPoint.x and nearbyPoint.y == exploredPoint.y then
+          table.remove(nearbyPoints, index)
+        end
+      end
+
+      -- Remove the point if it's reachable
+      for _, reachablePoint in ipairs(reachablePoints) do
+        if reachablePoint.x == nearbyPoint.x and reachablePoint.y == nearbyPoint.y then
+          table.remove(nearbyPoints, index)
+        end
+      end
+    end
+
+    for _, nearbyPoint in ipairs(nearbyPoints) do
+      nearbyPoint.tailPoint = pendingPoint
+      table.insert(reachablePoints, nearbyPoint)
+    end
+  end
+
+  return nil
 end
 
 --- Find a path
