@@ -1,8 +1,78 @@
+local abs = math.abs
+local tinsert = table.insert
+local tremove = table.remove
 local pathfinder = { }
 
 pathfinder.strategies = {
   astar = "astar"
 }
+
+--- Reverse path from the last point to the first point
+-- @param headPoint table: the last point
+-- @return table: an array of path points from the first point to the last point
+local function reverseTailChain(headPoint)
+  local path = { }
+  local point = headPoint
+
+  while point.tailPoint do
+    table.insert(path, point)
+    point = point.tailPoint
+  end
+
+  return path
+end
+
+--- Choose the best next pending point
+-- @param reachablePoints table: an array of current reachable points
+-- @param targetPoint table: the goal point
+-- @return table: the best next pending point
+local function choosePendingPoint(reachablePoints, targetPoint)
+  local bestPoint
+  local minCost
+
+  -- Choose the most short and cheap point
+  for _, reachablePoint in ipairs(reachablePoints) do
+    local distance = abs(targetPoint.x - reachablePoint.x) + abs(targetPoint.y - reachablePoint.y)
+    local preCost = reachablePoint.cost + distance
+
+    if not minCost or minCost > preCost then
+      minCost = preCost
+      bestPoint = reachablePoint
+    end
+  end
+
+  return bestPoint
+end
+
+--- Find available nearby points
+-- @param point table: the current point
+-- @param grid table: a grid where we will look for the nearby points
+-- @return table: an array of nearby points
+local function findNearbyPoints(point, grid)
+  local nearbyPoints = { }
+
+  local leftPoint = { x = point.x - 1, y = point.y }
+  if leftPoint.x > 0 and grid[leftPoint.x][leftPoint.y] == false then
+    tinsert(nearbyPoints, leftPoint)
+  end
+
+  local rightPoint = { x = point.x + 1, y = point.y }
+  if rightPoint.x <= #grid and grid[rightPoint.x][rightPoint.y] == false then
+    tinsert(nearbyPoints, rightPoint)
+  end
+
+  local topPoint = { x = point.x , y = point.y - 1 }
+  if topPoint.y > 0 and grid[topPoint.x][topPoint.y] == false then
+    tinsert(nearbyPoints, topPoint)
+  end
+
+  local bottomPoint = { x = point.x, y = point.y + 1}
+  if bottomPoint.y <= #grid[bottomPoint.x] and grid[bottomPoint.x][bottomPoint.y] == false then
+    tinsert(nearbyPoints, bottomPoint)
+  end
+
+  return nearbyPoints
+end
 
 --- Find a path by the A-star algoritm
 --- Thanks to the article: https://www.gabrielgambetta.com/generic-search.html
@@ -17,65 +87,6 @@ local function astar(grid, start, target)
   local reachablePoints = { startPoint }
   local exploredPoints = { }
 
-  -- Path builder
-  local function reverseTailChain(headPoint)
-    local path = { }
-    local point = headPoint
-
-    while point.tailPoint do
-      table.insert(path, point)
-      point = point.tailPoint
-    end
-
-    return path
-  end
-
-  -- Pending point chooser
-  local function choosePendingPoint(reachablePoints, targetPoint)
-    local bestPoint
-    local minCost
-
-    -- Choose the most short and cheap point
-    for _, reachablePoint in ipairs(reachablePoints) do
-      local distance = math.abs(targetPoint.x - reachablePoint.x) + math.abs(targetPoint.y - reachablePoint.y)
-      local preCost = reachablePoint.cost + distance
-
-      if not minCost or minCost > preCost then
-        minCost = preCost
-        bestPoint = reachablePoint
-      end
-    end
-
-    return bestPoint
-  end
-
-  -- Nearby points finder
-  local function findNearbyPoints(point, grid)
-    local nearbyPoints = { }
-
-    local leftPoint = { x = point.x - 1, y = point.y }
-    if leftPoint.x > 0 and grid[leftPoint.x][leftPoint.y] == false then
-      table.insert(nearbyPoints, leftPoint)
-    end
-
-    local rightPoint = { x = point.x + 1, y = point.y }
-    if rightPoint.x <= #grid and grid[rightPoint.x][rightPoint.y] == false then
-      table.insert(nearbyPoints, rightPoint)
-    end
-
-    local topPoint = { x = point.x , y = point.y - 1 }
-    if topPoint.y > 0 and grid[topPoint.x][topPoint.y] == false then
-      table.insert(nearbyPoints, topPoint)
-    end
-
-    local bottomPoint = { x = point.x, y = point.y + 1}
-    if bottomPoint.y <= #grid[bottomPoint.x] and grid[bottomPoint.x][bottomPoint.y] == false then
-      table.insert(nearbyPoints, bottomPoint)
-    end
-
-    return nearbyPoints
-  end
-
   while #reachablePoints > 0 do
     local pendingPoint = choosePendingPoint(reachablePoints, targetPoint)
 
@@ -88,11 +99,11 @@ local function astar(grid, start, target)
     -- Remove the point from reachable points and add to explored points
     for index = 1, #reachablePoints do
       if reachablePoints[index] == pendingPoint then
-        table.remove(reachablePoints, index)
+        tremove(reachablePoints, index)
         break
       end
     end
-    table.insert(exploredPoints, pendingPoint)
+    tinsert(exploredPoints, pendingPoint)
 
     -- Find nearby points and remove unwanted points from them
     local nearbyPoints = findNearbyPoints(pendingPoint, grid)
@@ -102,20 +113,20 @@ local function astar(grid, start, target)
       -- Remove the point if it's explored
       for _, exploredPoint in ipairs(exploredPoints) do
         if nearbyPoint.x == exploredPoint.x and nearbyPoint.y == exploredPoint.y then
-          table.remove(nearbyPoints, index)
+          tremove(nearbyPoints, index)
         end
       end
 
       -- Remove the point if it's reachable
       for _, reachablePoint in ipairs(reachablePoints) do
         if reachablePoint.x == nearbyPoint.x and reachablePoint.y == nearbyPoint.y then
-          table.remove(nearbyPoints, index)
+          tremove(nearbyPoints, index)
         end
       end
     end
 
     for _, nearbyPoint in ipairs(nearbyPoints) do
-      table.insert(reachablePoints, nearbyPoint)
+      tinsert(reachablePoints, nearbyPoint)
 
       -- Update cost of a nearby point's path if the current path cost is more adequate
       if not nearbyPoint.cost or pendingPoint.cost + 1 < nearbyPoint.cost then
