@@ -1,19 +1,18 @@
 local pathfinder = { }
 
-local mock = { { x =  2, y = 2 }, { x = 2, y = 3 }, { x = 3, y = 3 }, { x = 4, y = 3 }, { x = 4, y = 4 }, { x = 4, y = 5 } }
-
 pathfinder.strategies = {
   astar = "astar"
 }
 
 --- Find a path by the A-star algoritm
 --- Thanks to the article: https://www.gabrielgambetta.com/generic-search.html
+--- Also thanks to this: https://www.redblobgames.com/pathfinding/a-star/introduction.html
 -- @param grid table: a map with [x][y] coordinates and 0 (empty) or 1 (solid) values
 -- @param start table: a start point { x, y }
 -- @param target table: a target point { x, y }
 -- @return table: an array with path coordinates
 local function astar(grid, start, target)
-  local startPoint = { x = start.x, y = start.y }
+  local startPoint = { x = start.x, y = start.y, cost = 0 }
   local targetPoint = { x = target.x, y = target.y }
   local reachablePoints = { startPoint }
   local exploredPoints = { }
@@ -32,9 +31,22 @@ local function astar(grid, start, target)
   end
 
   -- Pending point chooser
-  local function choosePendingPoint(reachablePoints)
-    local index = math.random(1, #reachablePoints)
-    return reachablePoints[index]
+  local function choosePendingPoint(reachablePoints, targetPoint)
+    local bestPoint
+    local minCost
+
+    -- Choose the most short and cheap point
+    for _, reachablePoint in ipairs(reachablePoints) do
+      local distance = math.abs(targetPoint.x - reachablePoint.x) + math.abs(targetPoint.y - reachablePoint.y)
+      local preCost = reachablePoint.cost + distance
+
+      if not minCost or minCost > preCost then
+        minCost = preCost
+        bestPoint = reachablePoint
+      end
+    end
+
+    return bestPoint
   end
 
   -- Nearby points finder
@@ -65,7 +77,7 @@ local function astar(grid, start, target)
   end
 
   while #reachablePoints > 0 do
-    local pendingPoint = choosePendingPoint(reachablePoints)
+    local pendingPoint = choosePendingPoint(reachablePoints, targetPoint)
 
     -- Check the end of search
     if pendingPoint.x == targetPoint.x and pendingPoint.y == targetPoint.y then
@@ -103,8 +115,13 @@ local function astar(grid, start, target)
     end
 
     for _, nearbyPoint in ipairs(nearbyPoints) do
-      nearbyPoint.tailPoint = pendingPoint
       table.insert(reachablePoints, nearbyPoint)
+
+      -- Update cost of a nearby point's path if the current path cost is more adequate
+      if not nearbyPoint.cost or pendingPoint.cost + 1 < nearbyPoint.cost then
+        nearbyPoint.tailPoint = pendingPoint
+        nearbyPoint.cost = pendingPoint.cost + 1
+      end
     end
   end
 
