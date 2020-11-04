@@ -52,24 +52,25 @@ function display.displayMap(map, start, target, path)
     render[target.y][target.x] = graphic.objects.target
   end
 
-  -- Fill left and right borders
+  -- Make left and right borders
   for _, row in ipairs(render) do
     table.insert(row, 1, graphic.borders.left)
     table.insert(row, graphic.borders.right)
   end
 
-  -- Fill the top border
+  -- Make the top border
   local topBorder = ''
-  for _ = 1, #render + 1 do
+  for _ = 2, #render[1] do
     topBorder = topBorder .. graphic.borders.top
   end
-  table.insert(render, 1, { topBorder })
-
-  -- Fill the bottom border
+  
+  -- Make the bottom border
   local bottomBorder = ''
-  for x = 1, #render do
+  for x = 2, #render[1] do
     bottomBorder = bottomBorder .. graphic.borders.bottom
   end
+
+  table.insert(render, 1, { topBorder })
   table.insert(render, { bottomBorder })
 
   -- Convert the render to console output
