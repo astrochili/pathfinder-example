@@ -35,7 +35,7 @@ local function choosePendingPoint(reachablePoints, targetPoint)
     local distance = abs(targetPoint.x - reachablePoint.x) + abs(targetPoint.y - reachablePoint.y)
     local preCost = reachablePoint.cost + distance
 
-    if not minCost or minCost > preCost then
+    if not minCost or preCost < minCost then
       minCost = preCost
       bestPoint = reachablePoint
     end
