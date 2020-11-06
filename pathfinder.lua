@@ -15,7 +15,7 @@ local function reverseTailChain(headPoint)
   local point = headPoint
 
   while point.tailPoint do
-    table.insert(path, point)
+    tinsert(path, point)
     point = point.tailPoint
   end
 
