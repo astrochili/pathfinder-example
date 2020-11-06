@@ -66,7 +66,7 @@ local function findNearbyPoints(point, grid)
     tinsert(nearbyPoints, topPoint)
   end
 
-  local bottomPoint = { x = point.x, y = point.y + 1}
+  local bottomPoint = { x = point.x, y = point.y + 1 }
   if bottomPoint.y <= #grid[bottomPoint.x] and grid[bottomPoint.x][bottomPoint.y] == false then
     tinsert(nearbyPoints, bottomPoint)
   end
